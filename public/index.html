@@ -23,8 +23,8 @@
 	</form>
 	<div id="message"></div>
 	<div>
-		<button disabled class="saveButton">Download pdf</button>
-		<button disabled class="saveButton">Download LightCycler file</button>
+		<button disabled class="saveButton" onclick="download('pdf');">Download pdf</button>
+		<button disabled class="saveButton" onclick="download('csv');">Download LightCycler file</button>
 	</div>
 	<div>
 		Select a set of filters for the LightCycler: <br>
@@ -35,8 +35,8 @@
 		<input type="text" id="waves" onchange="document.querySelector('#customWave').selected = true;">
 	</div>
 	<form action="store" method="post" enctype="multipart/form-data">
-		<input type="text" name="pdf_name" onclick="download('pdf');">	
-		<input type="text" name="csv_name" onclick="download('csv');">
+		<input type="text" name="pdf_name">	
+		<input type="text" name="csv_name">
 		<textarea></textarea>
 		<textarea></textarea>
 		<button type="button" disabled class="saveButton">Store output</button>
@@ -91,7 +91,11 @@
 		};
 
 		var download = function(type) {
-			fetch("/download?type=" +type)
+			let query = "type=" + type;
+			if(type == "csv")
+				query += "&waves=" + document.querySelector("#waves").value.replace(/ /g,'');
+			
+			fetch("/download?" + query)
 		};
 
 	</script>

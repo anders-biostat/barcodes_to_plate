@@ -5,6 +5,8 @@ const path = require("path");
 const fileUpload = require("express-fileupload");
 const open = require("open");
 
+var storedContent = [];
+
 const app = express();
 app.use(fileUpload());
 
@@ -20,7 +22,7 @@ app.post("/upload", (req, res) => {
   let content = req.files.barcodes.data
   	.toString()
   	.split("\n")
-  	.map(el => el.trim().split("\t"))
+  	.map(el => el.trim().split("\t").map(e => e.trim()))
   	.filter(el => el.length > 1)
   	.filter(el => /[A-Za-z]\d+/.test(el[0]));
 
@@ -28,15 +30,18 @@ app.post("/upload", (req, res) => {
   	res.sendStatus(406);
   	return;
   }
- 	
-  generatePdf(content);
-  generateCsv(content);
 
-  res.send(content.length.toString())
+  res.send(content.length.toString());
+
+  storedContent = content;
 });
 
 app.get("/download", (req, res) => {
-
+	if(req.query.type == "pdf") {
+		generatePdf();
+	} else {
+		generateCsv(req.query.waves);
+	}
 });
 
 app.listen(8080, () =>
@@ -45,14 +50,12 @@ app.listen(8080, () =>
 
 open("http://localhost:8080/")
 
-function generatePdf(content) {
+function generatePdf() {
 
 };
 
-function generateCsv(content) {
-	
-	var output = [];
-  var colours = [
+function generateCsv(waves) {
+	var colours = [
     "$00FF8000",
     "clRed",
     "$0030D700",
@@ -66,19 +69,40 @@ function generateCsv(content) {
     "$00FD0299",
     "$0026C4B8"
   ];
-  var tests = [];
 
-        sample.waves.split(",").forEach(w => {
-        output.push([
-          sample.well, 
-          sample.orderId || sample.labId, 
-          "\"\"", 
-          w.trim(),
-          colours[i % colours.length],
-          sample.type || "Unknown",
-          sample.conc || ""
-        ].map(el => el.indexOf(" ") > -1 ? "\"" + el + "\"" : el));
-      });
+	fs.readFile("data/ctrls.csv", function(err, buf) {
+    if (err)
+      return console.log('Unable to read file with control labels: ' + err);
+
+    var data = buf.toString().split("\n"),
+    	ctrls = [];
+    for(var i = 1; i < data.length; i++) {
+      let ctrl = data[i].split(",").map(el => el.trim());
+      ctrls.push({
+      	name: ctrl[0],
+       	type: ctrl[1],
+       	conc: ctrl[2]
+       });
+    }
+
+    var output = [];
+    waves = waves.split(",").map(el => el.trim());
+
+    storedContent.forEach((el, i) => {
+    	var ct = ctrls.filter(e => e.name == el[1])[0] || {};
+    	waves.forEach(w => {
+    		output.push([
+    			el[0],
+    			el[1],
+    			"\"\"",
+    			w,
+    			colours[i % colours.length],
+       		ct.type || "Unknown",
+          ct.conc || ""    			
+    		].map(el => el.indexOf(" ") > -1 ? "\"" + el + "\"" : el))
+    	});
+    });
+
     output.sort(function(a, b) {
       if(a[0][0] < b[0][0]) return -1;
       if(a[0][0] > b[0][0]) return 1;
@@ -93,6 +117,17 @@ function generateCsv(content) {
       "\"Abs Quant:Sample Type\"",
       "\"Abs Quant:Concentration\""
     ]);
+
+    fs.writeFile(path.join(__dirname, "/output/output.csv"), 
+      output.map(el => el.join("\t")).join("\n"),
+      err => {if(err) throw err});
+  });
+};
+	
+/* var tests = [];
+
+    
+
 
  db.all(sql, [req.query.plateId], (err, result) => {
     if(err) throw err;
@@ -105,34 +140,6 @@ function generateCsv(content) {
     result.forEach((sample, i) => {
       if(tests.indexOf(sample.shortName) == -1) tests.push(sample.shortName);
 
-      sample.waves.split(",").forEach(w => {
-        output.push([
-          sample.well, 
-          sample.orderId || sample.labId, 
-          "\"\"", 
-          w.trim(),
-          colours[i % colours.length],
-          sample.type || "Unknown",
-          sample.conc || ""
-        ].map(el => el.indexOf(" ") > -1 ? "\"" + el + "\"" : el));
-      });
-    });
-
-    output.sort(function(a, b) {
-      if(a[0][0] < b[0][0]) return -1;
-      if(a[0][0] > b[0][0]) return 1;
-      return a[0].substring(1) - b[0].substring(1); 
-    });
-    output.unshift([
-      "General:Pos",
-      "\"General:Sample Name\"",
-      "\"General:Repl. Of\"",
-      "\"General:Filt. Comb.\"",
-      "\"Sample Preferences:Color\"",
-      "\"Abs Quant:Sample Type\"",
-      "\"Abs Quant:Concentration\""
-    ]);
-
     tests = tests.filter(el => el != "ctrl");
 
     let d = new Date();
@@ -144,11 +151,7 @@ function generateCsv(content) {
     
     let fileName = year + month + day + "_" + tests.join(",");
 
-    paths.outputTxt.forEach(out => {
-      fs.writeFile(path.join(out, fileName + ".txt"), 
-        output.map(el => el.join("\t")).join("\n"),
-        err => {if(err) throw err});
-    })
+
 
     let options = {
       format: "A4",
@@ -202,11 +205,5 @@ function generateCsv(content) {
         })
         .catch(err => {console.log(err);});
 
-    });
-  });    
-};
-
-
-
-
+    }); */
  

@@ -1,0 +1,21 @@
+name,sample type,concentration
+Std E4,Standard,1.00E4
+Std E3,Standard,1.00E3
+Std E2,Standard,1.00E2
+Std E1,Standard,1.00E1
+neg Kit,Negative Control,
+neg Auf,Negative Control,
+neg Ko,Negative Control,
+neg Li,Negative Control,
+pos Ko,Positive Control/Calibrator,
+PEI Ko,Unknown,
+pos PIV1,Positive Control/Calibrator,
+pos PIV3,Positive Control/Calibrator,
+pos RSVA,Positive Control/Calibrator,
+pos RSVB,Positive Control/Calibrator,
+pos Inf,Positive Control/Calibrator,
+pos Nor1,Positive Control/Calibrator,
+pos Nor2,Positive Control/Calibrator,
+pos E,Positive Control/Calibrator,
+pos R,Positive Control/Calibrator,
+pos N,Positive Control/Calibrator,

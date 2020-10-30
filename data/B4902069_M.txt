@@ -1,8 +1,8 @@
 General:Pos	"General:Sample Name"
-A1	P1
-A2	P2
-A3	IC
-A4	NegEx
+A1	pos PIV1
+A2	pos PIV3
+A3	Std E3
+A4	neg Kit
 A5	V2087089
 A6	V2087090
 A7	V2086757
