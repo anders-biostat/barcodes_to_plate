@@ -21,9 +21,15 @@ app.post("/upload", (req, res) => {
   	.toString()
   	.split("\n")
   	.map(el => el.trim().split("\t"))
-  	.filter(el => el.length > 1);
- 
-  res.send("uploaded")
+  	.filter(el => el.length > 1)
+  	.filter(el => /[A-Za-z]\d+/.test(el[0]));
+
+  if(content.length == 0) {
+  	res.sendStatus(406);
+  	return;
+  }
+ 	
+  res.send(content.length.toString())
 });
 
 app.listen(8080, () =>

@@ -2,9 +2,53 @@
 	<title>Read barcodes</title>
 </head>
 <body>
+	<div>Open file with barcodes to well assignment.</div>
 	<form  action="upload" method="post" enctype="multipart/form-data">
-		<input type="file" name="barcodes"/><br>
-		<input type="submit">
+		<input type="file" name="barcodes" id="barcodes"/><button onclick="fileupload();" type="button">Upload file</button>
 	</form>
-	
+	<div id="message"></div>
+	<div>
+		<button disabled class="saveButton">Download pdf</button>
+		<button disabled class="saveButton">Download LightCycler file</button>
+	</div>
+	<form action="store" method="post" enctype="multipart/form-data">
+		<input type="text" name="pdf_name">	
+		<input type="text" name="csv_name">
+		<textarea></textarea>
+		<textarea></textarea>
+		<button type="button" disabled class="saveButton">Store output</button>
+	</form>
+	<script type="text/javascript">
+		var fileupload = function() {
+			var files = document.getElementById("barcodes").files;
+			if(files.length == 0) {
+				document.getElementById("message").innerHTML = "No file is selected. Please, select a file first.";
+				return;
+			} else {
+				document.getElementById("message").innerHTML = "";
+			}
+  		
+  		const formData = new FormData()
+  		formData.append('barcodes', files[0])
+			
+			fetch("/upload", {
+				method: "post",
+				body: formData
+			})
+			.then(res => {
+				if(res.status == 406) {
+					document.getElementById("message").innerHTML = "Empty file or wrong format";
+					return;
+				} else if(res.status == 200) {
+					document.querySelectorAll(".saveButton")
+						.forEach(el => {el.disabled = false;})
+					return res.text();
+				}
+			})
+			.then(text => {
+				if(text) 
+					document.getElementById("message").innerHTML = "File is loaded. " + text + " wells detected"
+			})
+		};
+	</script>
 </body>
