@@ -1,5 +1,20 @@
 <head>
 	<title>Read barcodes</title>
+	<script type="text/javascript">
+		var filters = [{
+			name: "LC480 I (B)", 
+			waves: "483-533,523-568,615-670"
+		},{
+			name: "LC480 II (A)", 
+			waves: "465-510,533-580,618-660"
+		},{
+			name: "LC480 II (A) altona + Inlfuenza", 
+			waves: "483-533,523-568,615-670"
+		},{
+			name: "LC480 II (A) FTD", 
+			waves: "465-510,533-580,533-610,618-660"
+		}];
+	</script>
 </head>
 <body>
 	<div>Open file with barcodes to well assignment.</div>
@@ -11,15 +26,39 @@
 		<button disabled class="saveButton">Download pdf</button>
 		<button disabled class="saveButton">Download LightCycler file</button>
 	</div>
+	<div>
+		Select a set of filters for the LightCycler: <br>
+		<select id="filterList" onchange="setWaves();">
+			<option style="display: none;" id="customWave">Custom</option>
+		</select><br>
+		waves (comma separated): 
+		<input type="text" id="waves" onchange="document.querySelector('#customWave').selected = true;">
+	</div>
 	<form action="store" method="post" enctype="multipart/form-data">
-		<input type="text" name="pdf_name">	
-		<input type="text" name="csv_name">
+		<input type="text" name="pdf_name" onclick="download('pdf');">	
+		<input type="text" name="csv_name" onclick="download('csv');">
 		<textarea></textarea>
 		<textarea></textarea>
 		<button type="button" disabled class="saveButton">Store output</button>
 	</form>
 	<script type="text/javascript">
-		var fileupload = function() {
+		filters.forEach((el, i) => {
+			let opt = document.createElement("option");
+			opt.value = el.waves;
+			opt.innerHTML = el.name;
+			if(i == 0) opt.selected = true;
+			document.querySelector("#filterList")
+				.append(opt);
+		});
+
+		setWaves();
+		
+
+		function setWaves() {
+			document.querySelector("#waves").value = document.querySelector("#filterList").value;	
+		};
+
+		function fileupload() {
 			var files = document.getElementById("barcodes").files;
 			if(files.length == 0) {
 				document.getElementById("message").innerHTML = "No file is selected. Please, select a file first.";
@@ -50,5 +89,10 @@
 					document.getElementById("message").innerHTML = "File is loaded. " + text + " wells detected"
 			})
 		};
+
+		var download = function(type) {
+			fetch("/download?type=" +type)
+		};
+
 	</script>
 </body>
