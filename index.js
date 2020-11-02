@@ -12,7 +12,11 @@ const app = express();
 app.use(fileUpload());
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname + "/public/index.html"))
+  res.sendFile(path.join(__dirname + "/public/index.html"));
+});
+
+app.get('/style.css', (req, res) => {
+	res.sendFile(path.join(__dirname + "/public/style.css"));
 });
 
 app.post("/upload", (req, res) => {
@@ -51,7 +55,7 @@ app.get("/download", (req, res) => {
 app.get("/store", (req, res) => {
 	generatePdf();
 	generateCsv(req.query.waves);
-	
+
 	fs.copyFile(path.join(__dirname, "/output/output." + req.query.type),
 		path.resolve(req.query.path, req.query.name), err => {
 			if(err) {

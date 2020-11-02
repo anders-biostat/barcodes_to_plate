@@ -1,5 +1,6 @@
 <head>
 	<title>Read barcodes</title>
+	<link rel="stylesheet" type="text/css" href="style.css">
 	<script type="text/javascript">
 		var filters = [{
 			name: "LC480 I (B)", 
@@ -22,31 +23,80 @@
 	</script>
 </head>
 <body>
-	<div>Open file with barcodes to well assignment.</div>
-	<form  action="upload" method="post" enctype="multipart/form-data">
-		<input type="file" name="barcodes" id="barcodes"/><button onclick="fileupload();" type="button">Upload file</button>
-	</form>
-	<div id="message"></div>
-	<div>
-		<button disabled class="saveButton" onclick="download('pdf');">Download pdf</button>
-		<button disabled class="saveButton" onclick="download('csv');">Download LightCycler file</button>
+	<div class="container">
+		<h1>Barcodes to wells</h1>
+		<div class="section">
+			<div class="step">I.</div>
+			<div class="description">
+				Open a file with barcodes to well assignment. It should be a tab-separated file with filled wells in the first column
+				and their content in the second one. Lines, that do not fit this pattern will be ignored.
+			</div>
+			<form  action="upload" method="post" enctype="multipart/form-data">
+				<input type="file" name="barcodes" id="barcodes"/><button onclick="fileupload();" type="button">Upload file</button>
+			</form>
+			<div id="message_file" class="message"></div>
+		</div>
+		<div class="section">
+			<div class="step">II.</div>
+			<div class="description">
+				Select a set of filters for the LightCycler from the drop-down menu below or enter the wave lenths
+				manually in the text-area. Wave lengths should be separated by commas, spaces are allowed, but not
+				necessary.
+			</div>
+			<table width="100%">
+				<tr>
+					<td>
+						<select id="filterList" onchange="setWaves();">
+							<option style="display: none;" id="customWave">Custom</option>
+						</select>						
+					</td>
+					<td>
+						wave lengths:
+						<input type="text" id="waves" onchange="checkWaves(this.value);">						
+					</td>
+				</tr>
+			</table>
+			<div class="message" id="message_filters"></div>
+		</div>
+
+		<div class="section">
+			<div class="step">III.</div>
+			<div class="description">
+				Now you can download or store generated files. Below, you can specify names for each of the
+				files or paths to directories where the files should be saved to. Only absolute paths are accepted.
+				Each path should start from a new line.
+			</div>
+			<div>
+				<button disabled class="saveButton" onclick="download('pdf');">Download pdf</button>
+				<button disabled class="saveButton" onclick="download('csv');">Download LightCycler file</button>
+			</div>
+			<form action="store" method="post" enctype="multipart/form-data" id="store">
+				<table width="100%">
+					<tr>
+						<th>PDF</th>
+						<th>CSV</th>
+					</tr>
+					<tr>
+						<td>
+							<input type="text" name="pdf_name" class="name" id="pdf_name">			
+						</td>
+						<td>
+							<input type="text" name="csv_name" class="name" id="csv_name">
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<textarea id="pdf_paths"></textarea>			
+						</td>
+						<td>
+							<textarea id="csv_paths"></textarea>	
+						</td>		
+					</tr>
+				</table>				
+				<button type="button" disabled class="saveButton" onclick="store()">Store output</button>
+			</form>					
+		</div>
 	</div>
-	<div>
-		Select a set of filters for the LightCycler: <br>
-		<select id="filterList" onchange="setWaves();">
-			<option style="display: none;" id="customWave">Custom</option>
-		</select><br>
-		waves (comma separated): 
-		<input type="text" id="waves" onchange="document.querySelector('#customWave').selected = true;">
-	</div>
-	<form action="store" method="post" enctype="multipart/form-data" id="store">
-		<input type="text" name="pdf_name" class="name">	
-		<input type="text" name="csv_name" class="name">
-		<textarea id="pdf_paths"></textarea>
-		<textarea id="csv_paths"></textarea>
-		<div>Paths should be separated by line break</div>
-		<button type="button" disabled class="saveButton" onclick="store()">Store output</button>
-	</form>
 	<script type="text/javascript">
 		filters.forEach((el, i) => {
 			let opt = document.createElement("option");
@@ -66,16 +116,27 @@
 		
 
 		function setWaves() {
-			document.querySelector("#waves").value = document.querySelector("#filterList").value;	
+			document.querySelector("#waves").value = document.querySelector("#filterList").value;
+			document.querySelector("#message_filters").innerHTML = "";
+			document.querySelectorAll(".saveButton")
+				.forEach(el => {el.disabled = false;});
+
 		};
 
 		function fileupload() {
+			document.querySelectorAll(".saveButton")
+				.forEach(el => {el.disabled = true;});
+			["pdf", "csv"].forEach(type => {
+				document.querySelector("#" + type + "_name").value  = "";
+			})					
+
 			var files = document.getElementById("barcodes").files;
 			if(files.length == 0) {
-				document.getElementById("message").innerHTML = "No file is selected. Please, select a file first.";
+				document.getElementById("message_file")
+					.innerHTML = "<span class='highlight'>No file is selected. Please, select a file first.</span>";				
 				return;
 			} else {
-				document.getElementById("message").innerHTML = "";
+				document.getElementById("message_file").innerHTML = "";
 			}
   		
   		const formData = new FormData()
@@ -87,7 +148,8 @@
 			})
 			.then(res => {
 				if(res.status == 406) {
-					document.getElementById("message").innerHTML = "Empty file or wrong format";
+					document.getElementById("message_file")
+						.innerHTML = "<span class='highlight'>Empty file or wrong format</span>";
 					return;
 				} else if(res.status == 200) {
 					document.querySelectorAll(".saveButton")
@@ -118,7 +180,8 @@
 			})
 			.then(text => {
 				if(text) 
-					document.getElementById("message").innerHTML = "File is loaded. " + text + " wells detected"
+					document.getElementById("message_file")
+						.innerHTML = "File is loaded. <span class='highlight'>" + text + "</span> wells detected"
 			})
 		};
 
@@ -164,7 +227,21 @@
 						})
 					});
 			});
-		}
+		};
+
+		function checkWaves(value) {
+			document.querySelector('#customWave').selected = true;
+			document.querySelector("#message_filters").innerHTML = "";
+			document.querySelectorAll(".saveButton")
+				.forEach(el => {el.disabled = false;});			
+
+			if(value.split(",").filter(el => !(/\d+-\d+/.test(el))).length > 0){
+				document.querySelector("#message_filters")
+					.innerHTML = "<span class='highlight'>Wrong wave lengths format!</span>"
+				document.querySelectorAll(".saveButton")
+					.forEach(el => {el.disabled = true;});
+			}
+		};
 
 	</script>
 </body>
