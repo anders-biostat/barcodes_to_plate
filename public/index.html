@@ -35,8 +35,8 @@
 		<input type="text" id="waves" onchange="document.querySelector('#customWave').selected = true;">
 	</div>
 	<form action="store" method="post" enctype="multipart/form-data">
-		<input type="text" name="pdf_name">	
-		<input type="text" name="csv_name">
+		<input type="text" name="pdf_name" class="name">	
+		<input type="text" name="csv_name" class="name">
 		<textarea></textarea>
 		<textarea></textarea>
 		<button type="button" disabled class="saveButton">Store output</button>
@@ -80,7 +80,28 @@
 					return;
 				} else if(res.status == 200) {
 					document.querySelectorAll(".saveButton")
-						.forEach(el => {el.disabled = false;})
+						.forEach(el => {el.disabled = false;});
+					
+					var d = new Date();
+					var year = d.getFullYear().toString().substr(-2);
+					var month = (d.getMonth() + 1).toString();
+					if(month.length == 1) month = "0" + month;
+					var day = d.getDate().toString();
+					if(day.length == 1) day = "0" + day;
+
+					var filename = document.querySelector("#barcodes").files[0].name
+						.split(".")
+						.slice(0, -1)
+						.join(".");
+
+					console.log(filename);
+
+					document.querySelectorAll(".name").forEach(function(el) {
+						let type = el.name.split("_")[0];
+
+						el.value = year + month + day + "_" + filename + "." + type;
+					});
+
 					return res.text();
 				}
 			})

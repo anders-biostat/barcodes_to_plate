@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <mate charest="utf-8" />
+    <title>{{plateName}}</title>
+    <style type="text/css">
+      body {
+        font-size: 50%;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      span{
+        display: block;
+      }
+      h1 {
+        font-weight: normal;
+      }
+      h2 {
+        font-weight: normal;
+        width:100%;
+        margin: 0px;
+        font-weight: 110%;
+        border-top: solid 1px black;
+        padding: 3px;
+      }
+      div {
+        width: 58px;
+        height: 50px;
+      }
+      .well {
+        border-style: solid;
+        border-width: 1px;
+        border-color: black;
+        text-align: center;
+      }
+
+      .col, .row  {
+        background-color: #aaa;
+        text-align: center;
+      }
+
+      .col {
+        height: 15px;
+      }
+
+      .row {
+        width: 15px;
+      }
+
+      .rowcol {
+        background-color: #555;
+        width: 10px;
+        height: 10px;
+      }
+
+      .labId {
+        font-weight: bold;
+      }
+      .orderId {
+        font-size: 80%;
+        font-style: italic;
+      }
+
+    </style>
+  </head>
+  <body>
+    <h1>{{plateName}}, <i>{{date}}</i></h1>
+    <table id="#plate">
+      {{#each layout}}
+        <tr>
+        {{#each this.wells}}
+          <td style="padding: 0px;">
+            <div class={{this.class}}>
+              <span class="labId">{{this.label}}</span>
+            </div>
+          </td>
+        {{/each}}  
+        </tr>
+      {{/each}}
+    </table>
+  </body>
+</html>

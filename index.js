@@ -6,6 +6,7 @@ const fileUpload = require("express-fileupload");
 const open = require("open");
 
 var storedContent = [];
+var fileName = "";
 
 const app = express();
 app.use(fileUpload());
@@ -34,6 +35,7 @@ app.post("/upload", (req, res) => {
   res.send(content.length.toString());
 
   storedContent = content;
+  fileName = req.files.barcodes.name.split(".").slice(0, -1).join(".");
 });
 
 app.get("/download", (req, res) => {
@@ -51,10 +53,58 @@ app.listen(8080, () =>
 open("http://localhost:8080/")
 
 function generatePdf() {
+	let options = {
+	  format: "A4",
+	  orientation: "landscape",
+	  border: "10mm"
+	},
+	  rows = "_ABCDEFGH". split(""),
+	  cols = new Array(13).fill().map((el, i) => i),
+	  layout = {};
 
+  var d = new Date();
+  var year = d.getFullYear().toString().substr(-2);
+  var month = (d.getMonth() + 1).toString();
+  if(month.length == 1) month = "0" + month;
+  var day = d.getDate().toString();
+  if(day.length == 1) day = "0" + day;
+	
+	storedContent.forEach(el => {layout[el[0]] = el[1]});
+
+	var doc = {
+	  html: fs.readFileSync('./public/layout_template.html', 'utf8'),
+	  data: {
+	    plateName: fileName,
+	    date: day + "." + month + "." + year,
+	    layout: rows.map(row => {
+          return {wells: cols.map(col => {
+            let labId = "";
+            if(col == 0) 
+              labId = row
+            else if(row == "_")
+              labId = col
+            else if(layout[row + col]) 
+              labId = layout[row + col];
+        
+            return ({
+            	label: labId, 
+            	class: (((col == 0 ? "row" : "") + 
+                       (row == "_" ? "col " : "") + 
+                       (col == "test" ? "test " : "")) || "well").trim()
+            })
+          })}
+        })
+	  }
+	};
+	console.log(doc.data.layout[1]);
+
+	doc.path = path.join(__dirname, "/output/output.pdf");
+	
+	pdf.create(doc, options);
 };
 
 function generateCsv(waves) {
+
 	var colours = [
     "$00FF8000",
     "clRed",
@@ -153,57 +203,5 @@ function generateCsv(waves) {
 
 
 
-    let options = {
-      format: "A4",
-      orientation: "landscape",
-      border: "10mm"
-    },
-      rows = "_ABCDEFGH". split(""),
-      cols = new Array(13).fill().map((el, i) => i).concat(["test"]),
-      layout = {};
-    result.forEach(el => layout[el.well] = el);
-      
-    var doc = {
-      html: fs.readFileSync('./layout_template.html', 'utf8'),
-      data: {
-        plateName: result[0].plateName,
-        tests: tests.join(", "),
-        date: day + "." + month + "." + year,
-        layout: rows.map(row => {
-          return {wells: cols.map(col => {
-            let labId = "";
-            if(col == 0) 
-              labId = row
-            else if(row == "_")
-              labId = col
-            else if(col == "test") {
-              labId = cols.map(el => layout[row + el] ? layout[row + el].shortName : undefined)
-                .filter((el, i, self) => el && el != "ctrl" && self.indexOf(el) == i)
-                .join(", ");
-            } else if(layout[row + col]) 
-              labId = layout[row + col].labId;
-        
-
-            return ({
-              labId: labId,
-              orderId: layout[row + col] && layout[row + col].orderId ? "(" + layout[row + col].orderId + ")": undefined,
-              testName: layout[row + col] ? layout[row + col].shortName : undefined,
-              cl: (((col == 0 ? "row" : "") + 
-                              (row == "_" ? "col " : "") + 
-                              (col == "test" ? "test " : "")) || "well").trim()
-            });
-          })}
-        })
-      }
-    };
-
-    paths.outputPdf.forEach((out, i) => {
-      doc.path = path.join(out, fileName + ".pdf");
-      pdf.create(doc, options)
-        .then(r => {
-          if(i == 0) res.download(r.filename);
-        })
-        .catch(err => {console.log(err);});
-
-    }); */
+  */
  
