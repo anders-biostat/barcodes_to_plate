@@ -48,6 +48,20 @@ app.get("/download", (req, res) => {
 	res.download(path.join(__dirname, "/output/output." + req.query.type));
 });
 
+app.get("/store", (req, res) => {
+	generatePdf();
+	generateCsv(req.query.waves);
+	
+	fs.copyFile(path.join(__dirname, "/output/output." + req.query.type),
+		path.resolve(req.query.path, req.query.name), err => {
+			if(err) {
+				res.sendStatus(500);
+				console.log(err)
+			} else
+				res.sendStatus(200);
+		})
+});
+
 app.listen(8080, () =>
   console.log('Express server is running on localhost:8080')
 );
@@ -98,7 +112,6 @@ function generatePdf() {
         })
 	  }
 	};
-	console.log(doc.data.layout[1]);
 
 	doc.path = path.join(__dirname, "/output/output.pdf");
 	

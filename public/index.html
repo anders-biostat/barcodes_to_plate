@@ -14,6 +14,11 @@
 			name: "LC480 II (A) FTD", 
 			waves: "465-510,533-580,533-610,618-660"
 		}];
+		var paths = {
+			pdf: ["/home/tyranchick/Git/barcodes_to_plate/storePdf/"],
+			csv: ["/home/tyranchick/Git/barcodes_to_plate/storeCsv1", 
+						"/home/tyranchick/Git/barcodes_to_plate/storeCsv2"]
+		}
 	</script>
 </head>
 <body>
@@ -37,9 +42,10 @@
 	<form action="store" method="post" enctype="multipart/form-data" id="store">
 		<input type="text" name="pdf_name" class="name">	
 		<input type="text" name="csv_name" class="name">
-		<textarea></textarea>
-		<textarea></textarea>
-		<button type="button" disabled class="saveButton">Store output</button>
+		<textarea id="pdf_paths"></textarea>
+		<textarea id="csv_paths"></textarea>
+		<div>Paths should be separated by line break</div>
+		<button type="button" disabled class="saveButton" onclick="store()">Store output</button>
 	</form>
 	<script type="text/javascript">
 		filters.forEach((el, i) => {
@@ -52,6 +58,11 @@
 		});
 
 		setWaves();
+
+		["pdf", "csv"].forEach(type => {
+			document.querySelector("#" + type + "_paths")
+				.value  = paths[type].join('\n');
+		})
 		
 
 		function setWaves() {
@@ -111,7 +122,7 @@
 			})
 		};
 
-		var download = function(type) {
+		function download(type) {
 			let query = "type=" + type;
 			if(type == "csv")
 				query += "&waves=" + document.querySelector("#waves").value.replace(/ /g,'');
@@ -128,12 +139,32 @@
 				var url = window.URL.createObjectURL(blob);
 				var a = document.createElement('a');
 				a.href = url;
-				a.download = document.getElementsByName(type + "_name")[0].value || "output." + type ;
+				a.download = document.getElementsByName(type + "_name")[0].value || "output." + type;
 				document.body.appendChild(a); 
 				a.click();
 				a.remove();
 			});
 		};
+
+		function store() {
+			["pdf", "csv"].forEach(type => {
+				var name = document.getElementsByName(type + "_name")[0].value || "output." + type;
+
+				document.querySelector("#" + type + "_paths")
+					.value.split("\n")
+					.map(el => el.trim())
+					.forEach(path => {
+						fetch("/store?path=" + path + "&type=" + type + "&name=" + name + 
+							"&waves=" + document.querySelector("#waves").value.replace(/ /g,''))
+						.then(res => {
+							if(res.ok) 
+								alert("File '" + name + "' stored to '" + path + "'")
+							else
+								alert("Can't store '" + name + "' to '" + path + "'");
+						})
+					});
+			});
+		}
 
 	</script>
 </body>
