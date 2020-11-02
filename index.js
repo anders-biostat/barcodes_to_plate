@@ -44,6 +44,8 @@ app.get("/download", (req, res) => {
 	} else {
 		generateCsv(req.query.waves);
 	}
+
+	res.download(path.join(__dirname, "/output/output." + req.query.type));
 });
 
 app.listen(8080, () =>
@@ -173,35 +175,3 @@ function generateCsv(waves) {
       err => {if(err) throw err});
   });
 };
-	
-/* var tests = [];
-
-    
-
-
- db.all(sql, [req.query.plateId], (err, result) => {
-    if(err) throw err;
-
-    if(result.length == 0) {
-      res.sendStatus(404);
-      return;
-    }
-
-    result.forEach((sample, i) => {
-      if(tests.indexOf(sample.shortName) == -1) tests.push(sample.shortName);
-
-    tests = tests.filter(el => el != "ctrl");
-
-    let d = new Date();
-    let year = d.getFullYear().toString().substr(-2);
-    let month = (d.getMonth() + 1).toString();
-    if(month.length == 1) month = "0" + month;
-    let day = d.getDate().toString();
-    if(day.length == 1) day = "0" + day;
-    
-    let fileName = year + month + day + "_" + tests.join(",");
-
-
-
-  */
- 
