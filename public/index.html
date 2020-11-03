@@ -67,8 +67,10 @@
 				Each path should start from a new line.
 			</div>
 			<div>
-				<button disabled class="saveButton" onclick="download('pdf');">Download pdf</button>
 				<button disabled class="saveButton" onclick="download('csv');">Download LightCycler file</button>
+				<button disabled class="saveButton" onclick="download('pdf');">Download pdf</button>
+				Custom comment to pdf:
+				<input type="text" id="pdf_comments" value="Operator:" onchange="sendComment(this.value);">
 			</div>
 			<form action="store" method="post" enctype="multipart/form-data" id="store">
 				<table width="100%">
@@ -187,8 +189,8 @@
 
 		function download(type) {
 			let query = "type=" + type;
-			if(type == "csv")
-				query += "&waves=" + document.querySelector("#waves").value.replace(/ /g,'');
+			
+			query += "&waves=" + document.querySelector("#waves").value.replace(/ /g,'');
 			
 			fetch("/download?" + query)
 			.then(res => {
@@ -216,6 +218,7 @@
 				document.querySelector("#" + type + "_paths")
 					.value.split("\n")
 					.map(el => el.trim())
+					.filter(el => el.length > 0)
 					.forEach(path => {
 						fetch("/store?path=" + path + "&type=" + type + "&name=" + name + 
 							"&waves=" + document.querySelector("#waves").value.replace(/ /g,''))
@@ -243,5 +246,19 @@
 			}
 		};
 
+		function sendComment(comment) {
+			console.log(comment);
+			fetch("/comment", {
+				method: "post",
+				headers: {"Content-type": "text/plain; charset=utf-8"},
+				body: comment.toString()
+			})
+			.then(res => {
+				if(res.ok)
+					console.log("Comments updated")
+				else
+					console.log("Can't update pdf comments");
+			})
+		};
 	</script>
 </body>

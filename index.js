@@ -4,12 +4,17 @@ const express = require("express");
 const path = require("path");
 const fileUpload = require("express-fileupload");
 const open = require("open");
+const bodyParser = require('body-parser');
 
-var storedContent = [];
-var fileName = "";
+var appData = {
+	storedContent: [],
+	fileName: "",
+	comments: "Operator: "
+};
 
 const app = express();
 app.use(fileUpload());
+app.use(bodyParser.text());
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname + "/public/index.html"));
@@ -38,32 +43,43 @@ app.post("/upload", (req, res) => {
 
   res.send(content.length.toString());
 
-  storedContent = content;
-  fileName = req.files.barcodes.name.split(".").slice(0, -1).join(".");
+  appData.storedContent = content;
+  appData.fileName = req.files.barcodes.name.split(".").slice(0, -1).join(".");
+});
+
+app.post("/comment", (req, res) => {
+	appData.comments = req.body;
+	res.sendStatus(200);
 });
 
 app.get("/download", (req, res) => {
 	if(req.query.type == "pdf") {
-		generatePdf();
+		generatePdf(req.query.waves, function() {
+			res.download(path.join(__dirname, "output/output.pdf"));
+		});
 	} else {
-		generateCsv(req.query.waves);
+		generateCsv(req.query.waves, function() {
+			res.download(path.join(__dirname, "output/output.csv"));
+		});
 	}
-
-	res.download(path.join(__dirname, "/output/output." + req.query.type));
 });
 
 app.get("/store", (req, res) => {
-	generatePdf();
-	generateCsv(req.query.waves);
+	var f = function() {
+		fs.copyFile(path.join(__dirname, "/output/output." + req.query.type),
+			path.resolve(req.query.path, req.query.name), err => {
+				if(err) {
+					res.sendStatus(500);
+					console.log(err)
+				} else
+					res.sendStatus(200);
+			});		
+	}
+	if(req.query.type == "pdf")
+		generatePdf(req.query.waves, f)
+	else
+		generateCsv(req.query.waves, f);
 
-	fs.copyFile(path.join(__dirname, "/output/output." + req.query.type),
-		path.resolve(req.query.path, req.query.name), err => {
-			if(err) {
-				res.sendStatus(500);
-				console.log(err)
-			} else
-				res.sendStatus(200);
-		})
 });
 
 app.listen(8080, () =>
@@ -72,7 +88,7 @@ app.listen(8080, () =>
 
 open("http://localhost:8080/")
 
-function generatePdf() {
+function generatePdf(waves, onGenerated) {
 	let options = {
 	  format: "A4",
 	  orientation: "landscape",
@@ -89,12 +105,15 @@ function generatePdf() {
   var day = d.getDate().toString();
   if(day.length == 1) day = "0" + day;
 	
-	storedContent.forEach(el => {layout[el[0]] = el[1]});
+	appData.storedContent.forEach(el => {layout[el[0]] = el[1]});
+	console.log(appData.comments);
 
 	var doc = {
 	  html: fs.readFileSync('./public/layout_template.html', 'utf8'),
 	  data: {
-	    plateName: fileName,
+	    plateName: appData.fileName,
+	    waves: waves,
+	    comments: appData.comments,
 	    date: day + "." + month + "." + year,
 	    layout: rows.map(row => {
           return {wells: cols.map(col => {
@@ -119,10 +138,11 @@ function generatePdf() {
 
 	doc.path = path.join(__dirname, "/output/output.pdf");
 	
-	pdf.create(doc, options);
+	pdf.create(doc, options)
+		.then(r => {onGenerated()});
 };
 
-function generateCsv(waves) {
+function generateCsv(waves, onGenerated) {
 
 	var colours = [
     "$00FF8000",
@@ -157,7 +177,7 @@ function generateCsv(waves) {
     var output = [];
     waves = waves.split(",").map(el => el.trim());
 
-    storedContent.forEach((el, i) => {
+    appData.storedContent.forEach((el, i) => {
     	var ct = ctrls.filter(e => e.name == el[1])[0] || {};
     	waves.forEach(w => {
     		output.push([
@@ -189,6 +209,9 @@ function generateCsv(waves) {
 
     fs.writeFile(path.join(__dirname, "/output/output.csv"), 
       output.map(el => el.join("\t")).join("\n"),
-      err => {if(err) throw err});
+      err => {
+      	if(err) throw err;
+      	onGenerated();
+      });
   });
 };
