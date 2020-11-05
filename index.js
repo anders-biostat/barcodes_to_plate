@@ -34,7 +34,16 @@ app.post("/upload", (req, res) => {
   	.split("\n")
   	.map(el => el.trim().split("\t").map(e => e.trim()))
   	.filter(el => el.length > 1)
-  	.filter(el => /[A-Za-z]\d+/.test(el[0]));
+    .map(el => {
+      if(/[A-Za-z]\d+/.test(el[0])) {
+        return el;
+      } else if(/[A-Za-z]\d+/.test(el[1])) {
+        el.shift();
+        return el;
+      } else 
+        return [];
+    })
+    .filter(el => el.length == 2);
 
   if(content.length == 0) {
   	res.sendStatus(406);
